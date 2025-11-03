@@ -1,0 +1,43 @@
+# Virtual environments
+venv/
+.env/
+__pycache__/
+
+# Python cache & temp files
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# Configs & secrets
+app/utils/config.py
+*.env
+.env.local
+config.json
+secrets.json
+
+# Data folders
+vector_store/
+data/
+datasets/
+models/
+checkpoints/
+
+# Streamlit cache
+.streamlit/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# .gitignore
+env/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+.env
+app/utils/config.py
