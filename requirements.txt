@@ -11,3 +11,5 @@ nltk==3.9.1
 matplotlib==3.9.2
 langchain-classic==1.0.1
 langchain-core==1.2.5
+langchain-chroma
+langchain-huggingface
