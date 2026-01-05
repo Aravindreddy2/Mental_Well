@@ -39,6 +39,11 @@ st.markdown("""
     top: 60px !important;
     height: 40px !important;
 }
+button[kind="header"] {
+    color: white !important;
+    background-color: #1E1F20 !important;
+    border-radius: 5px !important;
+}
 .chat-wrapper {
     max-width: 850px;
     margin: auto;
@@ -67,18 +72,33 @@ st.markdown("""
     -webkit-text-fill-color: transparent;
     font-weight: bold;
     font-size: 3.5rem;
+    margin: 0 !important;
 }
 [data-testid="stSidebar"] {
     background-color: #171719 !important;
     border-right: 1px solid #2D2D30 !important;
     padding-top: 20px;
 }
+[data-testid="stSidebar"] .stButton button {
+    width: 100%;
+    border-radius: 10px !important;
+    background-color: transparent !important;
+    color: white !important;
+    border: 1px solid transparent !important;
+    text-align: left !important;
+}
 .stTextInput input {
     background-color: #1E1F20 !important;
     color: #FFFFFF !important;
+    caret-color: #FFFFFF !important;
     border: 1px solid #3C4043 !important;
     border-radius: 32px !important;
     padding: 18px 25px !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+}
+.stTextInput input::placeholder {
+    color: #FFFFFF !important;
+    opacity: 0.8;
 }
 footer { visibility: hidden !important; }
 </style>
@@ -143,15 +163,20 @@ if st.session_state.current_page == "Settings":
         placeholder="parent@example.com"
     )
 
-    # ✅ NEW BUTTON (ONLY ADDITION)
-    if st.button("➡️ Proceed to Chat"):
-        if name_input and email_input and is_valid_email(email_input):
+    if name_input and email_input:
+        if is_valid_email(email_input):
             st.session_state.user_name = name_input
             st.session_state.parent_email = email_input
-            st.session_state.current_page = "Chat"
-            st.rerun()
+            st.success(f"✅ Hello {name_input}, your settings are saved!")
+
+            # ✅ SAME-STYLE BUTTON (NO COLOR / CSS CHANGE)
+            if st.button("Proceed to Chat"):
+                st.session_state.current_page = "Chat"
+                st.rerun()
         else:
-            st.error("❌ Please enter a valid name and email.")
+            st.error("❌ Invalid email address.")
+    else:
+        st.warning("Please provide both your name and a trusted email to start.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -164,7 +189,10 @@ else:
     if not st.session_state.chat_history:
         greeting_name = st.session_state.user_name if st.session_state.user_name else ""
         st.markdown(f"<h1 class='gradient-text'>Hello {greeting_name}.</h1>", unsafe_allow_html=True)
-        st.markdown("<h2 style='color: #C4C7C5;'>How can I help you today?</h2>", unsafe_allow_html=True)
+        st.markdown(
+            "<h2 style='color: #C4C7C5; font-weight: 400; margin-top: 0;'>How can I help you today?</h2>",
+            unsafe_allow_html=True
+        )
 
     for entry in st.session_state.chat_history:
         if entry["role"] == "user":
@@ -174,36 +202,37 @@ else:
             )
         elif entry["role"] == "agent":
             st.markdown(
-                f"<div class='agent-bubble'><b>Agent</b><br>{entry['content']}</div>",
+                f"<div class='agent-bubble'>🤖 <b>Agent</b><br>{entry['content']}</div>",
                 unsafe_allow_html=True
             )
         elif entry["role"] == "emotion":
             st.markdown(
-                f"<span style='color:#8AB4F8;font-size:0.8rem;'>✨ {entry['content']}</span>",
+                f"<span style='color: #8AB4F8; font-size: 0.8rem;'>✨ {entry['content']}</span>",
                 unsafe_allow_html=True
             )
 
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown(
-        "<div style='position: fixed; bottom: 0; width: 100%; background: #0E0E10; padding: 20px;'>",
+        "<div style='position: fixed; bottom: 0; left: 0; width: 100%; background: #0E0E10; padding: 20px 0; z-index: 999;'>",
         unsafe_allow_html=True
     )
 
     _, center_col, _ = st.columns([0.15, 0.7, 0.15])
+
     with center_col:
         if not access_ready:
-            st.warning("⚠️ Go to Settings and enter your Name and Email.")
+            st.warning("⚠️ Access Restricted: Go to Settings and enter your Name and Parent Email.")
 
         with st.form("chat_form", clear_on_submit=True):
-            cols = st.columns([0.92, 0.08])
-            user_input = cols[0].text_input(
+            input_cols = st.columns([0.92, 0.08])
+            user_input = input_cols[0].text_input(
                 "",
                 placeholder="Enter here ...",
                 label_visibility="collapsed",
                 disabled=not access_ready
             )
-            submit = cols[1].form_submit_button("↑", disabled=not access_ready)
+            submit = input_cols[1].form_submit_button("↑", disabled=not access_ready)
 
         if submit and user_input and access_ready:
             emotion, score = detect_emotion(user_input)
@@ -211,14 +240,14 @@ else:
 
             st.session_state.chat_history.append({"role": "user", "content": user_input})
             st.session_state.chat_history.append(
-                {"role": "emotion", "content": f"{emotion} ({int(score*100)}%)"}
+                {"role": "emotion", "content": f"{emotion} ({int(score * 100)}%)"}
             )
             st.session_state.chat_history.append({"role": "agent", "content": agent_reply})
 
             if emotion.lower() in ["sadness", "fear", "anger"] and score > 0.8:
                 alert_msg = (
                     f"USER NAME: {st.session_state.user_name}\n"
-                    f"EMOTION: {emotion} ({int(score*100)}%)\n"
+                    f"EMOTION DETECTED: {emotion} ({int(score * 100)}%)\n"
                     f"MESSAGE: {user_input}"
                 )
                 send_alert("⚠️ Wellness Alert", alert_msg, st.session_state.parent_email)
@@ -226,4 +255,3 @@ else:
             st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
-    
